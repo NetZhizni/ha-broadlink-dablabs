@@ -1,0 +1,11 @@
+{
+  "domain": "broadlink_dablabs",
+  "name": "Broadlink (DAB-LABS async)",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://github.com/DAB-LABS/python-broadlink",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/DAB-LABS/python-broadlink/issues",
+  "version": "0.1.2"
+}

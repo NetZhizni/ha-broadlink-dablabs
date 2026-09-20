@@ -1,0 +1,190 @@
+"""Support for lights."""
+
+import enum
+import json
+import struct
+
+from . import exceptions as e
+from .device import Device
+
+
+class lb1(Device):
+    """Controls a Broadlink LB1."""
+
+    TYPE = "LB1"
+
+    @enum.unique
+    class ColorMode(enum.IntEnum):
+        """Enumerates color modes."""
+
+        RGB = 0
+        WHITE = 1
+        SCENE = 2
+
+    async def get_state(self) -> dict:
+        """Return the power state of the device."""
+        packet = self._encode(1, {})
+        response = await self.send_packet(0x6A, packet)
+        e.check_error(response[0x22:0x24])
+        return self._decode(response)
+
+    async def set_state(
+        self,
+        pwr: bool | None = None,
+        red: int | None = None,
+        blue: int | None = None,
+        green: int | None = None,
+        brightness: int | None = None,
+        colortemp: int | None = None,
+        hue: int | None = None,
+        saturation: int | None = None,
+        transitionduration: int | None = None,
+        maxworktime: int | None = None,
+        bulb_colormode: int | None = None,
+        bulb_scenes: str | None = None,
+        bulb_scene: str | None = None,
+        bulb_sceneidx: int | None = None,
+    ) -> dict:
+        """Set the power state of the device."""
+        state = {}
+        if pwr is not None:
+            state["pwr"] = int(bool(pwr))
+        if red is not None:
+            state["red"] = int(red)
+        if blue is not None:
+            state["blue"] = int(blue)
+        if green is not None:
+            state["green"] = int(green)
+        if brightness is not None:
+            state["brightness"] = int(brightness)
+        if colortemp is not None:
+            state["colortemp"] = int(colortemp)
+        if hue is not None:
+            state["hue"] = int(hue)
+        if saturation is not None:
+            state["saturation"] = int(saturation)
+        if transitionduration is not None:
+            state["transitionduration"] = int(transitionduration)
+        if maxworktime is not None:
+            state["maxworktime"] = int(maxworktime)
+        if bulb_colormode is not None:
+            state["bulb_colormode"] = int(bulb_colormode)
+        if bulb_scenes is not None:
+            state["bulb_scenes"] = str(bulb_scenes)
+        if bulb_scene is not None:
+            state["bulb_scene"] = str(bulb_scene)
+        if bulb_sceneidx is not None:
+            state["bulb_sceneidx"] = int(bulb_sceneidx)
+
+        packet = self._encode(2, state)
+        response = await self.send_packet(0x6A, packet)
+        e.check_error(response[0x22:0x24])
+        return self._decode(response)
+
+    def _encode(self, flag: int, state: dict) -> bytes:
+        """Encode a JSON packet."""
+        packet = bytearray(14)
+        data = json.dumps(state, separators=(",", ":")).encode()
+        p_len = 12 + len(data)
+        struct.pack_into(
+            "<HHHHBBI", packet, 0, p_len, 0xA5A5, 0x5A5A, 0, flag, 0x0B, len(data)
+        )
+        packet.extend(data)
+        checksum = sum(packet[0x02:], 0xBEAF) & 0xFFFF
+        packet[0x06:0x08] = checksum.to_bytes(2, "little")
+        return packet
+
+    def _decode(self, response: bytes) -> dict:
+        """Decode a JSON packet."""
+        payload = self.decrypt(response[0x38:])
+        js_len = struct.unpack_from("<I", payload, 0xA)[0]
+        state = json.loads(payload[0xE : 0xE + js_len])
+        return state
+
+
+class lb2(Device):
+    """Controls a Broadlink LB26/LB27."""
+
+    TYPE = "LB2"
+
+    @enum.unique
+    class ColorMode(enum.IntEnum):
+        """Enumerates color modes."""
+
+        RGB = 0
+        WHITE = 1
+        SCENE = 2
+
+    async def get_state(self) -> dict:
+        """Return the power state of the device."""
+        packet = self._encode(1, {})
+        response = await self.send_packet(0x6A, packet)
+        e.check_error(response[0x22:0x24])
+        return self._decode(response)
+
+    async def set_state(
+        self,
+        pwr: bool | None = None,
+        red: int | None = None,
+        blue: int | None = None,
+        green: int | None = None,
+        brightness: int | None = None,
+        colortemp: int | None = None,
+        hue: int | None = None,
+        saturation: int | None = None,
+        transitionduration: int | None = None,
+        maxworktime: int | None = None,
+        bulb_colormode: int | None = None,
+        bulb_scenes: str | None = None,
+        bulb_scene: str | None = None,
+    ) -> dict:
+        """Set the power state of the device."""
+        state = {}
+        if pwr is not None:
+            state["pwr"] = int(bool(pwr))
+        if red is not None:
+            state["red"] = int(red)
+        if blue is not None:
+            state["blue"] = int(blue)
+        if green is not None:
+            state["green"] = int(green)
+        if brightness is not None:
+            state["brightness"] = int(brightness)
+        if colortemp is not None:
+            state["colortemp"] = int(colortemp)
+        if hue is not None:
+            state["hue"] = int(hue)
+        if saturation is not None:
+            state["saturation"] = int(saturation)
+        if transitionduration is not None:
+            state["transitionduration"] = int(transitionduration)
+        if maxworktime is not None:
+            state["maxworktime"] = int(maxworktime)
+        if bulb_colormode is not None:
+            state["bulb_colormode"] = int(bulb_colormode)
+        if bulb_scenes is not None:
+            state["bulb_scenes"] = str(bulb_scenes)
+        if bulb_scene is not None:
+            state["bulb_scene"] = str(bulb_scene)
+
+        packet = self._encode(2, state)
+        response = await self.send_packet(0x6A, packet)
+        e.check_error(response[0x22:0x24])
+        return self._decode(response)
+
+    def _encode(self, flag: int, state: dict) -> bytes:
+        """Encode a JSON packet."""
+        packet = bytearray(12)
+        data = json.dumps(state, separators=(",", ":")).encode()
+        struct.pack_into("<HHHBBI", packet, 0, 0xA5A5, 0x5A5A, 0, flag, 0x0B, len(data))
+        packet.extend(data)
+        checksum = sum(packet, 0xBEAF) & 0xFFFF
+        packet[0x04:0x06] = checksum.to_bytes(2, "little")
+        return packet
+
+    def _decode(self, response: bytes) -> dict:
+        """Decode a JSON packet."""
+        payload = self.decrypt(response[0x38:])
+        js_len = struct.unpack_from("<I", payload, 0x08)[0]
+        state = json.loads(payload[0x0C : 0x0C + js_len])
+        return state
