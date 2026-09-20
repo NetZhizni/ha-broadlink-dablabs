@@ -1,91 +1,94 @@
 # Broadlink (DAB-LABS async) for Home Assistant
 
-Альтернативна інтеграція Broadlink для Home Assistant, побудована на
-[DAB-LABS/python-broadlink](https://github.com/DAB-LABS/python-broadlink) —
-підтримуваному асинхронному форку `mjg59/python-broadlink`, який ядро HA
-використовує зараз і який не отримує змін з 2024 року.
+*[Читати українською](README.uk.md)*
 
-Домен інтеграції: **`broadlink_dablabs`** — окремий від штатного `broadlink`,
-тому обидві інтеграції можуть працювати одночасно без конфліктів.
+An alternative Broadlink integration for Home Assistant, built on
+[DAB-LABS/python-broadlink](https://github.com/DAB-LABS/python-broadlink) — the
+maintained async fork of `mjg59/python-broadlink` that HA core currently uses
+and which has not received changes since 2024.
 
-## Навіщо це
+Integration domain: **`broadlink_dablabs`** — separate from the stock
+`broadlink` integration, so both can run side by side without conflicts.
 
-- `mjg59/python-broadlink` (залежність штатної інтеграції) не приймає змін з
-  2024 року, тому нові пристрої (наприклад RM5 Plus) не потрапляють у HA
-  офіційно.
-- DAB-LABS підтримує форк саме для того, щоб HA міг отримувати виправлення й
-  нові пристрої, включно з RM5 Plus (`0x5224`).
-- Ця інтеграція **вбудовує (вендорить)** код DAB-LABS напряму в
-  `custom_components/broadlink_dablabs/blk/`, а не тягне його як pip-пакет —
-  PyPI-дистрибутив DAB-LABS (`python-broadlink`) встановлюється під тим самим
-  імпортованим ім'ям `broadlink`, що й пакет штатної інтеграції, тож два pip-
-  пакети конфліктували б в одному venv. Вендоринг це повністю знімає.
-- Усі виклики бібліотеки — справжній нативний `asyncio` (UDP-транспорт,
-  `asyncio.Lock`, `asyncio.Queue`), тому інтеграція викликає їх напряму через
-  `await`, без `hass.async_add_executor_job`.
+## Why this exists
 
-## Що підтримується
+- `mjg59/python-broadlink` (the stock integration's dependency) has not
+  received changes since 2024, so new devices (e.g. RM5 Plus) never make it
+  into HA officially.
+- DAB-LABS maintains the fork specifically so HA can get fixes and new
+  devices, including RM5 Plus (`0x5224`).
+- This integration **vendors** the DAB-LABS code directly into
+  `custom_components/broadlink_dablabs/blk/` instead of pulling it in as a pip
+  package — the DAB-LABS PyPI distribution (`python-broadlink`) installs under
+  the same import name `broadlink` as the stock integration's package, so the
+  two pip packages would conflict in one venv. Vendoring removes that
+  conflict entirely.
+- All library calls are genuinely native `asyncio` (UDP transport,
+  `asyncio.Lock`, `asyncio.Queue`), so the integration calls them directly via
+  `await`, without `hass.async_add_executor_job`.
 
-Платформи: `remote`, `infrared`, `radio_frequency`, `time`, `select`,
-`sensor`, `switch`, `light`, `climate` — для тих самих родин пристроїв, що й
-у штатній інтеграції (RM mini/pro/4/5 Plus, A1/A2, SP1-4, MP1/MP1S, BG1,
-LB1/LB2, Hysen-термостати).
+## What's supported
 
-**RM5 Plus підтримується "з коробки"**: `INFRARED` + `REMOTE` + `SWITCH` +
-`RADIO_FREQUENCY` (експериментально, без підтвердження на залізі), без
-ручного патчингу бібліотеки після кожного оновлення HAOS. Сенсор
-температури/вологості не підтримується: на реальному пристрої `check_sensors()`
-стабільно повертає нульові значення (сенсора немає або невідома команда), тож
-`sensor`-сутності для RM5 Plus свідомо не створюються.
+Platforms: `remote`, `infrared`, `radio_frequency`, `time`, `select`,
+`sensor`, `switch`, `light`, `climate` — for the same device families as the
+stock integration (RM mini/pro/4/5 Plus, A1/A2, SP1-4, MP1/MP1S, BG1,
+LB1/LB2, Hysen thermostats).
 
-### Свідомо не перенесено
+**RM5 Plus is supported out of the box**: `INFRARED` + `REMOTE` + `SWITCH` +
+`RADIO_FREQUENCY` (experimental, unverified on hardware), with no manual
+library patching after every HAOS update.
 
-- Застаріла YAML-платформа `switch:` (в самому ядрі позначена як deprecated) —
-  усі пристрої додаються через Config Flow (UI).
-- DHCP-автовиявлення — вимкнено навмисно, щоб не дублювати сповіщення поруч
-  зі штатною інтеграцією `broadlink`. Пристрої додаються вручну за IP.
+### Deliberately not ported
 
-### Відомі обмеження
+- The legacy YAML `switch:` platform (marked deprecated in core itself) — all
+  devices are added via Config Flow (UI).
+- DHCP auto-discovery — disabled on purpose, to avoid duplicate notifications
+  alongside the stock `broadlink` integration. Devices are added manually by
+  IP.
 
-Платформи `infrared` і `radio_frequency` залежать від відносно нових базових
-доменів ядра HA (`homeassistant.components.infrared` /
-`homeassistant.components.radio_frequency`, пакети `infrared-protocols` /
-`rf-protocols`). Якщо ваша версія HA ще їх не має, впадуть лише ці дві
-платформи в лозі — решта (`remote`, `switch`, `sensor`, `light`, `climate`,
-`select`, `time`) працюватимуть нормально.
+### Known limitations
 
-Потрібен Python 3.13+ у контейнері HA (використовується синтаксис generic-
-параметрів за замовчуванням, PEP 696) — це вже вимога самого ядра Home
-Assistant у поточних релізах.
+The `infrared` and `radio_frequency` platforms depend on relatively new HA
+core base domains (`homeassistant.components.infrared` /
+`homeassistant.components.radio_frequency`, the `infrared-protocols` /
+`rf-protocols` packages). If your HA version doesn't have them yet, only
+these two platforms will fail in the log — the rest (`remote`, `switch`,
+`sensor`, `light`, `climate`, `select`, `time`) will work normally.
 
-## Встановлення через HACS (Custom repository)
+Requires Python 3.13+ in the HA container (uses default generic parameter
+syntax, PEP 696) — this is already a requirement of Home Assistant core
+itself in current releases.
 
-1. Залийте цей репозиторій на GitHub (див. інструкцію нижче).
-2. HACS → три крапки вгорі праворуч → **Custom repositories**.
-3. URL: посилання на ваш репозиторій, категорія: **Integration**.
-4. Знайдіть "Broadlink (DAB-LABS async)" у HACS → Download.
-5. Перезапустіть Home Assistant.
-6. Settings → Devices & Services → Add Integration → **Broadlink (DAB-LABS
-   async)** → введіть IP-адресу пристрою (наприклад, RM5 Plus).
+## Installation via HACS (Custom repository)
 
-## Ручне встановлення (без HACS)
+1. HACS → three-dot menu in the top right → **Custom repositories**.
+2. URL: `https://github.com/NetZhizni/ha-broadlink-dablabs`, category:
+   **Integration**.
+3. Find "Broadlink (DAB-LABS async)" in HACS → Download.
+4. Restart Home Assistant.
+5. Settings → Devices & Services → Add Integration → **Broadlink (DAB-LABS
+   async)** → enter the device's IP address (e.g. RM5 Plus).
 
-Скопіюйте `custom_components/broadlink_dablabs/` у `config/custom_components/`
-вашого HA і перезапустіть Home Assistant.
+## Manual installation (without HACS)
 
-## Іконка
+Copy `custom_components/broadlink_dablabs/` into
+`config/custom_components/` of your HA instance and restart Home Assistant.
 
-Інтеграція постачає власну іконку/лого (`custom_components/broadlink_dablabs/brand/`),
-ідентичні тим, що використовує штатна інтеграція `broadlink` у
-[home-assistant/brands](https://github.com/home-assistant/brands). З Home
-Assistant 2026.3+ кастомні інтеграції можуть постачати brand-зображення прямо
-у своїй теці (`brand/icon.png`, `brand/logo.png` тощо) — окремий запит до
-репозиторію brands більше не потрібен, іконка з'явиться в UI одразу після
-встановлення.
+## Icon
 
-## Ліцензія
+The integration ships its own icon/logo
+(`custom_components/broadlink_dablabs/brand/`), identical to the ones used by
+the stock `broadlink` integration in
+[home-assistant/brands](https://github.com/home-assistant/brands). Starting
+with Home Assistant 2026.3+, custom integrations can ship brand images
+directly in their own folder (`brand/icon.png`, `brand/logo.png`, etc.) — a
+separate request to the brands repository is no longer needed, and the icon
+appears in the UI right after installation.
 
-MIT, див. [LICENSE](LICENSE). Код у `custom_components/broadlink_dablabs/blk/`
-вендорено з [DAB-LABS/python-broadlink](https://github.com/DAB-LABS/python-broadlink)
-під його власною MIT-ліцензією — див.
+## License
+
+MIT, see [LICENSE](LICENSE). The code in
+`custom_components/broadlink_dablabs/blk/` is vendored from
+[DAB-LABS/python-broadlink](https://github.com/DAB-LABS/python-broadlink)
+under its own MIT license — see
 [blk/LICENSE](custom_components/broadlink_dablabs/blk/LICENSE).
