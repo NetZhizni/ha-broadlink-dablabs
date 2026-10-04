@@ -522,17 +522,20 @@ class rm4(rm4pro):
     TYPE = "RM4"
 
 
-class rm5plus(rmminib, rmpro):
+class rm5plus(rmminib):
     """Controls a Broadlink RM5 Plus.
 
-    Mini-b framing from ``rmminib`` (IR) plus RF sweep/capture from
-    ``rmpro``, matching the RM5 Plus's marketed IR+RF capabilities.
+    Reported as device type 0x5224, firmware V62111. Broadlink's own
+    listings describe the RM5 Plus as an infrared-only remote (38 kHz,
+    2.4 GHz Wi-Fi), with no RF and no temperature/humidity sensor.
 
-    Deliberately does *not* inherit ``rm4mini``'s sensor support: on real
-    hardware ``check_sensors()`` (command 0x24) answers cleanly but with a
-    constant ``{"temperature": 0.0, "humidity": 0.0}``, i.e. this unit has
-    no working temperature/humidity sensor over that command. RF itself is
-    still unverified against real hardware.
+    Based on mjg59/python-broadlink#831, which builds it on ``rmminib``
+    (the RM mini 3 protocol family) and was tested for send, learn and
+    auth on real hardware. The alternative mjg59/python-broadlink#832
+    filed 0x5224 under ``rm4pro``; that would expose an RF transmitter and
+    temperature/humidity sensors the hardware does not have, and poll a
+    sensor command every minute that the device cannot answer, so the
+    ``rmminib`` base is the one carried here.
     """
 
     TYPE = "RM5PLUS"

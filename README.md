@@ -7,6 +7,11 @@ An alternative Broadlink integration for Home Assistant, built on
 maintained async fork of `mjg59/python-broadlink` that HA core currently uses
 and which has not received changes since 2024.
 
+> **Note:** Home Assistant has accepted the DAB-LABS library for the stock
+> `broadlink` integration. Once that change ships in an HA release, this
+> custom integration will no longer be needed — remove it and use the stock
+> `broadlink` integration instead.
+
 Integration domain: **`broadlink_dablabs`** — separate from the stock
 `broadlink` integration, so both can run side by side without conflicts.
 
@@ -34,9 +39,11 @@ Platforms: `remote`, `infrared`, `radio_frequency`, `time`, `select`,
 stock integration (RM mini/pro/4/5 Plus, A1/A2, SP1-4, MP1/MP1S, BG1,
 LB1/LB2, Hysen thermostats).
 
-**RM5 Plus is supported out of the box**: `INFRARED` + `REMOTE` + `SWITCH` +
-`RADIO_FREQUENCY` (experimental, unverified on hardware), with no manual
-library patching after every HAOS update.
+**RM5 Plus is supported out of the box**: `INFRARED` + `REMOTE` + `SWITCH`,
+with no manual library patching after every HAOS update. The RM5 Plus is an
+infrared-only remote: it has no RF transmitter and no temperature/humidity
+sensor, so the integration creates no `radio_frequency` or `sensor` entities
+for it.
 
 ### Deliberately not ported
 
